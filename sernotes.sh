@@ -2,9 +2,12 @@
 
 # help shoouldn't be printed out twice even if you call it twice
 # be able to concatenate multiple notes names
+# multiple words in note name doesn't work
 
 WORD_LENGTH=0
 TITLE_SEPARATION=''
+BREAK=false
+HELP_PRINTED=false
 
 function show_help {
   echo "Usage: sernotes [Arguments]"
@@ -15,11 +18,10 @@ function show_help {
 }
 
 function create_note {
-  echo "$1" >> $1.md
-  get_word_length $1
+  echo "$1" >> "$1".md
+  get_word_length "$1"
   print_equals
-  echo $TITLE_SEPARATION >> $1.md
-  # touch $1.md
+  echo $TITLE_SEPARATION >> "$1".md
 }
 
 function get_word_length {
@@ -30,19 +32,36 @@ function print_equals {
   TITLE_SEPARATION=$(printf '%*s' $WORD_LENGTH | tr ' ' '=')
 }
 
-while [[ $#  -gt 0 ]]
-do
-key="$1"
-  case $key in
+function options {
+  case "$1" in
     -h | --help)
-      show_help
-      shift
+      if [ $HELP_PRINTED = true ]; then
+        BREAK=true
+      else
+        show_help
+        HELP_PRINTED=true
+      fi
+      BREAK=true
       ;;
     -n | --note)
-      create_note $2
+      create_note "$2"
       shift
-      shift
+      BREAK=true
       ;;
   esac
-done
+}
 
+while [ $#  -gt 0 ]
+do
+  key="$1"
+  shift
+  BREAK=false
+  for arg in "$@"
+  do
+    options "$key" "$arg"
+    if [ $BREAK = true ]; then
+      break
+    fi
+  done
+done
+options "$key"
